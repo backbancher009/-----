@@ -42,7 +42,7 @@ module.exports = {
     if (!antiSpamStatus[threadId]) return;
 
     const now = Date.now();
-    const LIMIT = 5;       
+    const LIMIT = 6;       
     const INTERVAL = 10000; 
 
     if (!spamData[senderId]) spamData[senderId] = [];
