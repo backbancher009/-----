@@ -16,17 +16,17 @@ module.exports = {
     const start = Date.now();
 
     const msg = await api.sendMessage(threadId, {
-      text: "⚡ Checking..."
+      text: "⚡ 𝐂𝐡𝐞𝐜𝐤𝐢𝐧𝐠..."
     });
 
     const end = Date.now();
     const ping = end - start;
 
     const responses = [
-      "🏓 Pong!",
-      "⚡ Online!",
-      "🚀 Running!",
-      "✅ Active!"
+      "🏓 𝐏𝐨𝐧𝐠!",
+      "⚡ 𝐎𝐧𝐥𝐢𝐧𝐞!",
+      "🚀 𝐑𝐮𝐧𝐧𝐢𝐧𝐠!",
+      "✅ 𝐀𝐜𝐭𝐢𝐯𝐞!"
     ];
 
     const reply = responses[Math.floor(Math.random() * responses.length)];
