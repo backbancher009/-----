@@ -43,7 +43,7 @@ async function topMembers({ sock, chatId, isGroup, cn }) {
         return;
     }
 
-    let response = '🏆 *Top Members Based on Message Count:*\n\n';
+    let response = '🏆 *𝐓𝐨𝐩 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 𝐁𝐚𝐬𝐞𝐝 𝐨𝐧 𝐌𝐞𝐬𝐬𝐚𝐠𝐞 𝐂𝐨𝐮𝐧𝐭:*\n\n';
     sortedMembers.forEach(([userId, count], index) => {
         response += `${index + 1}. @${userId.split('@')[0]} - ${count} messages\n`;
     });
