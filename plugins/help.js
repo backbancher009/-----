@@ -6,75 +6,19 @@ module.exports = {
     aliases: ['menu'],
     permission: 0,
     prefix: true,
-    description: 'Show all available commands.',
+    description: 'Ultra futuristic menu system',
     category: 'Utility',
-    credit: 'Developed by Mohammad Nayan',
-    usages: ['help', 'help [command name]'],
+    credit: 'XAHID PRIME 🍷',
   },
 
   start: async ({ event, api, args, loadcmd }) => {
     const { threadId, getPrefix } = event;
-    const getAllCommands = () => loadcmd.map((plugin) => plugin.config);
-    const commands = getAllCommands();
 
-    const prefix = await getPrefix(threadId)
-
-    const globalPrefix = global.config.PREFIX;
-
-    const mergedCategories = {
-      "⚙️ System": ["Administration", "Admin", "Owner", "Bot Management", "System"],
-      "🧠 AI & Chat": ["AI", "AI Chat"],
-      "🎬 Media": ["Media", "Video", "Image"],
-      "🧰 Utilities": ["Utility", "Utilities", "System"],
-      "👥 Group": ["Group Management", "group"],
-      "🎮 Fun": ["Fun", "Games", "greetings"],
-      "🛰️ Tools": ["Tools", "Information"]
-    };
-
-    const categories = {};
-    commands.forEach((cmd) => {
-      let cat = cmd.category || cmd.categorie || cmd.categories || "📦 Uncategorized";
-      for (const merged in mergedCategories) {
-        if (mergedCategories[merged].includes(cat)) {
-          cat = merged;
-          break;
-        }
-      }
-      if (!categories[cat]) categories[cat] = [];
-      categories[cat].push(cmd);
-    });
-
-    // ───── SINGLE COMMAND INFO ─────
-    if (args[0]) {
-      const command = commands.find((cmd) => cmd.name.toLowerCase() === args[0].toLowerCase());
-      if (command) {
-        const infoText = `
-╭─❖  𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗜𝗡𝗙𝗢  ❖─╮
-│ 🔹 Name: ${command.name}
-│ 🔹 Aliases: ${command.aliases?.join(", ") || "None"}
-│ 🔹 Version: ${command.version || "1.0.0"}
-│ 🔹 Description: ${command.description || "No description"}
-│ 🔹 Usage: ${command.usage || command.usages?.join("\n│   ") || "Not defined"}
-│ 🔹 Permission: ${command.permission}
-│ 🔹 Category: ${command.category || "Uncategorized"}
-│ 🔹 Credits: ${command.credit || command.credits || "Mohammad Nayan"}
-╰────────────────────╯`;
-        await api.sendMessage(threadId, { text: infoText });
-      } else {
-        await api.sendMessage(threadId, { text: `⚠️ No command found named "${args[0]}".` });
-      }
-      return;
-    }
-    const pkg = global.pkg;
-
+    const commands = loadcmd.map(cmd => cmd.config);
+    const prefix = await getPrefix(threadId);
     const timezone = global.config.timeZone || "Asia/Dhaka";
 
-    const now = new Date().toLocaleString("en-US", {
-      timeZone: timezone,
-      hour12: true,
-    });
-
-    const currentTime = new Date().toLocaleTimeString("en-US", {
+    const time = new Date().toLocaleTimeString("en-US", {
       timeZone: timezone,
       hour: "2-digit",
       minute: "2-digit",
@@ -82,45 +26,79 @@ module.exports = {
       hour12: true
     });
 
-    const currentDate = new Date().toLocaleDateString("en-US", {
+    const date = new Date().toLocaleDateString("en-US", {
       timeZone: timezone,
       day: "2-digit",
       month: "2-digit",
       year: "numeric"
     });
-    // ───── MAIN HELP MENU ─────
-    let responseText = `
-╭─❖  𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗠𝗘𝗡𝗨  ❖─╮
-│ 💎 𝘽𝙤𝙩: ${global.config.botName || "EMon System"}
-│ 👑 Owner: ${global.config.botOwner || "Mohammad Nayan"}
-│ 🌍 Global Prefix: \`${globalPrefix}\`
-│ 👥 Group Prefix: \`${prefix || "Not set (using global)"}\`
-│ 🧩 Version: ${pkg.version}
-│ 🕒 Time: ${currentTime}
-│ 📅 Date: ${currentDate}
-│ 🌐 Timezone: ${timezone}
-│ 📜 Total Commands: ${commands.length}
-│──────────────────────`;
 
-    for (const category in categories) {
-      const cmds = categories[category]
-        .map(cmd => `│   ├─ ${prefix}${cmd.name}`)
-        .join("\n");
+    // 📌 CATEGORY BUILD
+    const categories = {};
+    commands.forEach(cmd => {
+      const cat = cmd.category || cmd.categorie || "📦 Other";
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(cmd.name);
+    });
 
-      responseText += `\n│ ${category}\n${cmds}\n│──────────────────────`;
+    // 🔍 SINGLE COMMAND
+    if (args[0]) {
+      const cmd = commands.find(c => c.name === args[0]);
+      if (!cmd) return api.sendMessage(threadId, { text: "❌ Command not found!" });
+
+      return api.sendMessage(threadId, {
+        text:
+`╭━━━〔 ⚡ COMMAND DETAILS ⚡ 〕━━━╮
+┃ 🧩 Name      : ${cmd.name}
+┃ 🔁 Aliases   : ${cmd.aliases?.join(", ") || "None"}
+┃ 📝 Details   : ${cmd.description || "No description"}
+┃ ⚙️ Usage     : ${cmd.usages?.join(" , ") || "N/A"}
+┃ 🔐 Permission: ${cmd.permission}
+┃ 👑 Credit    : ${cmd.credit}
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯`
+      });
     }
 
-    responseText += `
-╰──────────────────────╯`;
+    // 🚀 MAIN MENU UI
+    let text = `
+╔══════════════════════╗
+   🚀 𝐙𝐀𝐇𝐈𝐃-𝐁𝐎𝐓 𝐒𝐘𝐒𝐓𝐄𝐌 🚀
+╚══════════════════════╝
+
+👑 Owner   : ${global.config.botOwner}
+🤖 Bot     : ${global.config.botName}
+🌐 Prefix  : ${prefix}
+⚡ Version : ${global.pkg.version}
+⏰ Time    : ${time}
+📅 Date    : ${date}
+
+━━━━━━━━━━━━━━━━━━━━━━━
+📦 TOTAL COMMANDS ➜ ${commands.length}
+━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+    for (const cat in categories) {
+      text += `\n╭─〔 ${cat} 〕\n`;
+      categories[cat].forEach(cmd => {
+        text += `│ ✧ ${prefix}${cmd}\n`;
+      });
+      text += `╰───────────────╯\n`;
+    }
+
+    text += `
+━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ 𝐒𝐘𝐒𝐓𝐄𝐌 𝐒𝐓𝐀𝐓𝐔𝐒: 𝐎𝐍𝐋𝐈𝐍𝐄 ⚡
+💀 𝐏𝐎𝐖𝐄𝐑𝐄𝐃 𝐁𝐘 𝐙𝐀𝐇𝐈𝐃-𝐁𝐎𝐓 🍷
+━━━━━━━━━━━━━━━━━━━━━━━━`;
 
     try {
-      const response = await axios.get(global.config.helpPic, { responseType: 'stream' });
+      const res = await axios.get(global.config.helpPic, { responseType: 'stream' });
       await api.sendMessage(threadId, {
-        image: { stream: response.data },
-        caption: responseText
+        image: { stream: res.data },
+        caption: text
       });
     } catch {
-      await api.sendMessage(threadId, { text: responseText });
+      await api.sendMessage(threadId, { text });
     }
-  },
+  }
 };
