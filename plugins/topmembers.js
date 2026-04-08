@@ -1,59 +1,79 @@
-const fs = require('fs');
-const path = require('path');
+  const fs = require("fs");
+const path = require("path");
 
-const dataFilePath = path.join(__dirname, '..', 'Nayan', 'data', 'messageCount.json');
+// 📁 Data file
+const dataFilePath = path.join(__dirname, "..", "Nayan", "data", "messageCount.json");
 
+// 📥 Load data
 function loadMessageCounts() {
-    if (fs.existsSync(dataFilePath)) {
-        const data = fs.readFileSync(dataFilePath, 'utf8');
-        return JSON.parse(data);
-    }
-    return {};
+  if (fs.existsSync(dataFilePath)) {
+    return JSON.parse(fs.readFileSync(dataFilePath, "utf8"));
+  }
+  return {};
 }
 
-function saveMessageCounts(messageCounts) {
-    fs.writeFileSync(dataFilePath, JSON.stringify(messageCounts, null, 2));
+// 📤 Save data
+function saveMessageCounts(data) {
+  fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
 }
 
+// ➕ Count messages
 function incrementMessageCount(groupId, userId) {
-    const messageCounts = loadMessageCounts();
+  const data = loadMessageCounts();
 
-    if (!messageCounts[groupId]) messageCounts[groupId] = {};
-    if (!messageCounts[groupId][userId]) messageCounts[groupId][userId] = 0;
+  if (!data[groupId]) data[groupId] = {};
+  if (!data[groupId][userId]) data[groupId][userId] = 0;
 
-    messageCounts[groupId][userId] += 1;
-    saveMessageCounts(messageCounts);
+  data[groupId][userId]++;
+  saveMessageCounts(data);
 }
 
-async function topMembers({ sock, chatId, isGroup, cn }) {
-    if (!isGroup) {
-        await sock.sendMessage(chatId, { text: 'This command is only available in group chats.' });
-        return;
-    }
+// 🏆 Leaderboard
+async function topMembers({ sock, chatId, isGroup, limit }) {
+  if (!isGroup) return;
 
-    const messageCounts = loadMessageCounts();
-    const groupCounts = messageCounts[chatId] || {};
+  const metadata = await sock.groupMetadata(chatId);
+  const messageCounts = loadMessageCounts();
+  const groupCounts = messageCounts[chatId] || {};
 
-    const sortedMembers = Object.entries(groupCounts)
-        .sort(([, countA], [, countB]) => countB - countA)
-        .slice(0, cn);
+  // 👑 Owner
+  const owners = global.config.admin.map(id => id + "@s.whatsapp.net");
 
-    if (sortedMembers.length === 0) {
-        await sock.sendMessage(chatId, { text: 'No message activity recorded yet.' });
-        return;
-    }
+  // 🛡️ Admins
+  const admins = metadata.participants
+    .filter(p => p.admin)
+    .map(p => p.id);  let members = Object.entries(groupCounts);
 
-    let response = '🏆 *𝐓𝐨𝐩 𝐌𝐞𝐦𝐛𝐞𝐫𝐬 𝐁𝐚𝐬𝐞𝐝 𝐨𝐧 𝐌𝐞𝐬𝐬𝐚𝐠𝐞 𝐂𝐨𝐮𝐧𝐭:*\n\n';
-    sortedMembers.forEach(([userId, count], index) => {
-        response += `${index + 1}. @${userId.split('@')[0]} - ${count} messages\n`;
+  // ❌ Only remove owner (admin থাকবে)
+  members = members.filter(([id]) => !owners.includes(id));
+
+  // 🔥 Sort
+  members.sort((a, b) => b[1] - a[1]);
+
+  const finalList = members.slice(0, limit);
+
+  // 🎖️ Badge
+  const badge = ["🥇", "🥈", "🥉"];
+
+  let text = `👑 @${owners[0].split("@")[0]}\n\n🏆 𝐓𝐨𝐩 𝐌𝐞𝐦𝐛𝐞𝐫𝐬\n`;
+
+  if (finalList.length === 0) {
+    text += "No active members yet.";
+  } else {
+    finalList.forEach(([id, count], i) => {
+      const isAdmin = admins.includes(id);
+
+      text += `${badge[i] || "•"} ${isAdmin ? "🛡️" : ""}@${id.split("@")[0]} - ${count}\n`;
     });
+  }
 
-    await sock.sendMessage(chatId, {
-        text: response,
-        mentions: sortedMembers.map(([userId]) => userId),
-    });
+  await sock.sendMessage(chatId, {
+    text,
+    mentions: [owners[0], ...finalList.map(([id]) => id)]
+  });
 }
 
+// 📦 Command export
 module.exports = {
   config: {
     name: "topmembers",
@@ -61,21 +81,31 @@ module.exports = {
     permission: 0,
     prefix: true,
     cooldowns: 5,
-    description: "Shows the top 5 members based on message count in the group.",
-    usage: [
-      `${global.config.PREFIX}topmembers - Displays the top 5 members based on message count.`,
-      `${global.config.PREFIX}top - Alias for the same functionality.`,
-    ],
-    categories: "Utility",
-    credit: "Developed by Mohammad Nayan",
+    description: "Compact leaderboard with admin highlight",
+    category: "Utility",
+    credit: "XAHID PRIME 🍷",
   },
-  event: async ({ event, api }) => {
+
+  // 📊 Message count system
+  event: async ({ event }) => {
     const { threadId, senderId, isGroup } = event;
-    incrementMessageCount(threadId, senderId);
+    if (isGroup) {
+      incrementMessageCount(threadId, senderId);
+    }
   },
+
+  // 🏆 Command run
   start: async ({ event, api, args }) => {
     const { threadId, isGroup } = event;
-    const cn = args[0] || 5;
-    await topMembers({ sock: api, chatId: threadId, isGroup, cn });
-  },
+    if (!isGroup) return;
+
+    const limit = parseInt(args[0]) || 5;
+
+    await topMembers({
+      sock: api,
+      chatId: threadId,
+      isGroup,
+      limit
+    });
+  }
 };
